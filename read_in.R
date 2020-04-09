@@ -5,15 +5,19 @@ library(stringr)
 
 CACN <- readtext("CACN.txt")
 
+## Clean wierd HTML text
 CACN$text <- gsub("\\\\xa0", "", CACN$text)
 CACN$text <- gsub("\"", "", CACN$text)
 CACN$text <- gsub(", \'", ".", CACN$text)
 CACN$text <- gsub("\'", "", CACN$text)
 
+## Replace new line sign with skip to avoid having to be careful with backslashes
 CACN$text <- gsub("\\\\n", "skipskip", CACN$text)
 CACN$text <- gsub("skipskipskipskipskipskipskipskip", "", CACN$text)
 
+## Split data by meeting
 CACN_data <- str_split(CACN$text, "adjourned")
+
 
 meetings1 <- CACN_data[[1]][1]
 
