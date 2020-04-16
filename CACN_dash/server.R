@@ -5,19 +5,22 @@ library(stringr)
 library(gridExtra)
 library(grid)
 library(ggplotify)
-library(kableExtra)
+library(DT)
 
 ## Load in tidy words by meeting
 tidy_words <- readRDS("tidy_words.RDS")
 
 ## Load in sentiment plot by meeting
-sent_plot_meetings <- readRDS("sent_plot_meetings.RDS")
+sent_plot_meetings <- readRDS("sent_plot_meetings.rds")
 
 ## Load in sentiment analysis of all comments
 sent_all_comments <- readRDS("sent_all_comments.rds")
 
 ## Load in word count plots by meeting
 tplot <- readRDS("talk_plot_meetings.rds")
+
+## Load in Topic Modelling
+lda <- readRDS("LDA.rds")
 
 ## Define server logic 
 shinyServer(function(input, output) {
@@ -53,17 +56,16 @@ shinyServer(function(input, output) {
     })
     
 ## MP Word Count Table
-    output$mpTable <- renderTable({
+    output$mpTable <- renderDT({
         tidy_words <- bind_rows(tidy_words, .id = "meeting") %>%
-            filter(name == "Mr. Dan Albas",
+            filter(name == input$select,
                    str_length(word) > 5,
-                   !word %in% c("committee","subcommittee","meeting","members","chair","opposition", "government")) %>%
+                   !word %in% c("committee","subcommittee","meeting","members","chair","opposition", "government", "motion", "canada","canadians","important","minutes","briefings","parties","committees")) %>%
             group_by(word) %>%
             tally() %>%
-            arrange(desc(n)) %>%
-            head(15)
+            arrange(desc(n))
         
-        kable(tidy_words)
+        tidy_words
     })
 
 ## Meeting Sentiment Plots
@@ -104,5 +106,9 @@ shinyServer(function(input, output) {
     })
     output$tplot8 <- renderPlot({
         tplot[[6]]
+    })
+    output$ldaplot <- renderPlot({
+        lda +
+            labs(title = "LD Term Allocation of Meetings 1-8")
     })
 })

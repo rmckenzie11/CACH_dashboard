@@ -4,52 +4,67 @@ library(readtext)
 library(stringr)
 library(tidyverse)
 library(tm)
+library(XML)
 
-CACN <- readtext("CACN.txt")
-CACN$text <- gsub("\\\\xa0", "", CACN$text)
-CACN$text <- gsub("\"", "", CACN$text)
+members <- xmlToDataFrame("Data/members.xml") %>%
+  select(caucus = CaucusShortName, first = PersonOfficialFirstName, last = PersonOfficialLastName) 
+
+
+members$caucus <- gsub("Ã©", "é", members$caucus)
+members$first <- gsub("Ã©", "é", members$first)
+members$last <- gsub("Ã©", "é", members$last)
+
+## Read in CACN raw text data
+CACN <- readtext("Data/CACN.txt")
+
+## Replace new line sign with skip to avoid having to be careful with backslashes
+CACN$text <- gsub("\\\\n\\\\xa0\\\\n", " ", CACN$text)
+
+## Clean wierd HTML text
+CACN$text <- gsub("\\\\xa0", " ", CACN$text)
+CACN$text <- gsub("\"", " ", CACN$text)
 CACN$text <- gsub(", \'", ".", CACN$text)
-CACN$text <- gsub("\'", "", CACN$text)
+CACN$text <- gsub("\'", " ", CACN$text)
 
-CACN$text <- gsub("\\\\n", "skipskip", CACN$text)
-CACN$text <- gsub("skipskipskipskipskipskipskipskip", "", CACN$text)
-
+## Split data by meeting
 CACN_data <- str_split(CACN$text, "adjourned")
 
-meetings1 <- CACN_data[[1]][1]
+## Pull out just the text
+meetings <- CACN_data[[1]]
+meetings <- meetings[-7]
+meetings <- tolower(meetings)
 
-comments1 <- str_split(meetings1, "skipskip")
+stopw <- tolower(c(members$last, stopwords("english"), "china", "committee","subcommittee","meeting","members","chair","opposition", "government", "motion", "canada", "canadians","important","minutes","briefings","parties","committees", "mr.", "think", "thank", "canadian", "chinese"))
 
-y <- data.frame(comments1[[1]])
-colnames(y) <- "V1"
+for (i in 1:6) {
+  meetings[i] = removeWords(meetings[i], stopw)
+  meetings[i] = stripWhitespace(meetings[i])
+  meetings[i] = paste(str_extract_all(meetings[i], '\\w{5,}')[[1]], collapse = ' ')
+}
 
-com1 <- y %>%
-  separate(V1, into = c("name","text"), sep = ":", extra = "merge")
 
-com1 <- na.omit(com1)
-com1$name <- gsub("(\\((.*?)\\))","",com1$name)
-com1$name <- as.factor(trimws(gsub("of the Committee","",com1$name)))
+temp <- Corpus(VectorSource(meetings)
 
-com1$text = removeWords(com1$text, stopwords("english"))
-com1$text = stripWhitespace(com1$text)
 
-myCorpus <- Corpus(VectorSource(com1$text))
-tdm <- DocumentTermMatrix(myCorpus)
 
-com1_lda <- LDA(tdm, k = 2, control = list(seed = 1010))
+c <- DocumentTermMatrix(Corpus(VectorSource(meetings)))
+lda <- LDA(c, k = 6, control = list(seed = 1010))
 
-com1_topics <- tidy(com1_lda, matrix = "beta")
+topics <- tidy(lda, matrix = "beta")
 
-top_terms <- com1_topics %>%
+top_terms <- topics %>%
   group_by(topic) %>%
   top_n(10, beta) %>%
   ungroup() %>%
   arrange(topic, -beta)
 
-top_terms %>%
+LDA <- top_terms %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
   ggplot(aes(term, beta, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   coord_flip() +
   scale_x_reordered()
+
+saveRDS(LDA, "LDA.rds")
+

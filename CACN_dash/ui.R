@@ -10,15 +10,17 @@ library(ggplotify)
 ## Set png(test)
 png(bg = "wheat1")
 
-
 ## Load in tidy words by meeting
 tidy_words <- readRDS("tidy_words.RDS")
 
 ## Load in sentiment plot by meeting
-sent_plot_meetings <- readRDS("sent_plot_meetings.RDS")
+sent_plot_meetings <- readRDS("sent_plot_meetings.rds")
 
 ## Load in sentiment analysis of all comments
 sent_all_comments <- readRDS("sent_all_comments.rds")
+
+## Load in Topic Modelling
+lda <- readRDS("LDA.rds")
 
 ## Funcion (fluidPage) that defines UI
 ui <- fluidPage(
@@ -47,7 +49,7 @@ ui <- fluidPage(
             
             ## 2ndd Output Table: the most frequent words, they used, remember to work on 
             h6("Most frequent words used by MP"),
-            tableOutput("mpTable")
+            DT::dataTableOutput("mpTable")
             
         ),
         
@@ -115,8 +117,17 @@ ui <- fluidPage(
                                      )
                                  ),
                                  plotOutput("plot8"),
-                                 plotOutput("tplot8"))
-            )
+                                 plotOutput("tplot8")),
+                        tabPanel("LDA Topic Modelling",
+                                 HTML(
+                                     paste(
+                                         p("This tab displayes Latent Dirichlet Allocation from Meetings 1-8. These were the words LDA determined most clearly identified as the 'topic' of the meeting.")
+                                     )
+                                 ),
+                                 plotOutput("ldaplot"))
+                        
+            ),
+            
         )
     )
 )

@@ -7,7 +7,7 @@ library(sentimentr)
 library(XML)
 
 ## Read in CACN raw text data
-CACN <- readtext("CACN.txt")
+CACN <- readtext("Data/CACN.txt")
 
 ## Replace new line sign with skip to avoid having to be careful with backslashes
 CACN$text <- gsub("\\\\n\\\\xa0\\\\n", "skip", CACN$text)
@@ -89,7 +89,7 @@ sent_all_comments <- sent_all_comments %>%
   left_join(all_comments) %>%
   filter(!name %in% c("The Clerk", "The Chair"))
 
-members <- xmlToDataFrame("members.xml") %>%
+members <- xmlToDataFrame("Data/members.xml") %>%
   select(caucus = CaucusShortName, first = PersonOfficialFirstName, last = PersonOfficialLastName) 
 
 
@@ -145,4 +145,5 @@ saveRDS(sent_all_comments, "sent_all_comments.rds")
 saveRDS(tidy_com, "tidy_words.RDS")
 saveRDS(sent_plot_meetings,"sent_plot_meetings.rds")
 saveRDS(talk_plot_meetings,"talk_plot_meetings.rds")
-
+saveRDS(members, "members.rds")
+saveRDS(meetings, "transcripts.rds")
