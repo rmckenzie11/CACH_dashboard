@@ -4,10 +4,19 @@ library(readtext)
 library(stringr)
 library(tidyverse)
 library(tm)
-library(XML)
+library(cleanNLP)
 
-members <- xmlToDataFrame("Data/members.xml") %>%
-  select(caucus = CaucusShortName, first = PersonOfficialFirstName, last = PersonOfficialLastName) 
+## Unfinished Natural text processing
+
+#reticulate::use_python("C:/Users/Robert/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Python 3.8/Python 3.8 (32-bit).lnk")
+#cnlp_init_spacy()
+
+#cnannotatedText <- cnlp_annotate(gospels, as_strings = TRUE,
+#                                   text_var = "text", doc_var = "verse_title")
+
+
+## Read in dataset of MPs
+members <- readRDS("Data/members.rds") 
 
 
 members$caucus <- gsub("Ã©", "é", members$caucus)
@@ -34,22 +43,23 @@ meetings <- CACN_data[[1]]
 meetings <- meetings[-7]
 meetings <- tolower(meetings)
 
+## Define common stopwords
 stopw <- tolower(c(members$last, stopwords("english"), "china", "committee","subcommittee","meeting","members","chair","opposition", "government", "motion", "canada", "canadians","important","minutes","briefings","parties","committees", "mr.", "think", "thank", "canadian", "chinese"))
 
+
+## Clean text
 for (i in 1:6) {
   meetings[i] = removeWords(meetings[i], stopw)
   meetings[i] = stripWhitespace(meetings[i])
   meetings[i] = paste(str_extract_all(meetings[i], '\\w{5,}')[[1]], collapse = ' ')
 }
 
-
-temp <- Corpus(VectorSource(meetings)
-
-
-
+## Run LDA on cleaned text
 c <- DocumentTermMatrix(Corpus(VectorSource(meetings)))
 lda <- LDA(c, k = 6, control = list(seed = 1010))
 
+
+## Plot LDA
 topics <- tidy(lda, matrix = "beta")
 
 top_terms <- topics %>%
@@ -58,7 +68,7 @@ top_terms <- topics %>%
   ungroup() %>%
   arrange(topic, -beta)
 
-LDA <- top_terms %>%
+lda_plot <- top_terms %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
   ggplot(aes(term, beta, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
@@ -66,5 +76,5 @@ LDA <- top_terms %>%
   coord_flip() +
   scale_x_reordered()
 
-saveRDS(LDA, "LDA.rds")
+saveRDS(lda_plot, "LDA.rds")
 

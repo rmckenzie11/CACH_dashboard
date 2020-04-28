@@ -1,4 +1,5 @@
 ## Load Libraries
+
 library(readtext)
 library(tidyverse)
 library(tidytext)
@@ -33,9 +34,11 @@ comments <- comments[-7]
 ## Convert list of text corpuses to list of dataframes
 comments <- lapply(comments, data.frame)
 
-## "for loop" maybe remove, rename columns
+## for loop iterates through each meeting
 for (i in 1:6) {
   colnames(comments[[i]]) <- "V1"
+
+## Splits transcript into two columns, an ID and the text of their comment
   comments[[i]] <- comments[[i]]%>%
     separate(V1, into = c("name","text"), sep = ":", extra = "merge") 
   comments[[i]] <- na.omit(comments[[i]])
@@ -141,6 +144,7 @@ for (i in 1:6) {
 }
 
 ## Send the prepared data to Shiny!
+
 saveRDS(sent_all_comments, "sent_all_comments.rds")
 saveRDS(tidy_com, "tidy_words.RDS")
 saveRDS(sent_plot_meetings,"sent_plot_meetings.rds")
