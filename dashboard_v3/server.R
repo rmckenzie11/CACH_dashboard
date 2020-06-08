@@ -7,8 +7,13 @@ library(grid)
 library(ggplotify)
 library(DT)
 
+##Animation
+anim1 <- readRDS("anim1.rds")
+
 ## Load in topic dictionaries
-topics <- readRDS("topic_dictionary.rds")
+topic <- readRDS("topics_by_meeting.rds")
+
+mp_topic <- readRDS("topics_by_mp.rds")
 
 ## Load in tidy words by meeting
 tidy_words <- readRDS("tidy_words.RDS")
@@ -28,36 +33,6 @@ lda <- readRDS("LDA.rds")
 ## Define server logic 
 shinyServer(function(input, output) {
     
-## MP Sentiment Plots
-    output$mpPlot_sent <- renderPlot({
-        sent_all_comments <-sent_all_comments %>%
-            filter(name == input$select)
-        sent_all_comments <- split(sent_all_comments , f = sent_all_comments$column_label)
-        
-        dat <- list()
-        mps <- list()
-        
-        for(i in 1:length(sent_all_comments)){
-            dat[[i]] <- with(density(sent_all_comments[[i]]$ave_sentiment), data.frame(x, y))
-            mps[[i]] <- ggplot(dat[[i]], aes(x = x, y = y)) +
-            geom_line() +
-            geom_area(mapping = aes(x = ifelse(x >=0 & x<=1 , x, 0)), fill = "green") +
-            geom_area(mapping = aes(x = ifelse(x <=0 & x>=-1 , x, 0)), fill = "red") +
-            scale_y_continuous(limits = c(0,7.5)) +
-            theme_minimal() +
-            labs(x = "Sentiment", 
-                 y = "",
-                 title = paste("Meeting ", case_when(i == 1 ~ 1,
-                                                     i == 2 ~ 3,
-                                                     i == 3 ~ 4,
-                                                     i == 4 ~ 5,
-                                                     i == 5 ~ 7,
-                                                     i == 6 ~ 8)))
-        }
-        
-        grid.arrange(grobs = mps,ncol = 2, newpage = F, top = textGrob(paste(input$select,"'s Sentiments"), gp=gpar(fontface="bold")))
-    })
-    
 ## MP Word Count Table
     output$mpTable <- renderDT({
         tidy_words <- bind_rows(tidy_words, .id = "meeting") %>%
@@ -69,6 +44,17 @@ shinyServer(function(input, output) {
             arrange(desc(n))
         
         tidy_words
+    })
+    
+## MP Topic Table
+    output$mpTop <- renderDT({
+        df <- mp_topic[input$select]
+        
+        df <- data.frame(table(unlist(df))) %>%
+            arrange(desc(Freq))
+        names(df) <- c("Topic", "Freq")
+        
+        df
     })
 
 ## Meeting Sentiment Plots
@@ -110,6 +96,28 @@ shinyServer(function(input, output) {
     output$tplot8 <- renderPlot({
         tplot[[6]]
     })
+    
+## Meeting TOpic Count Plots
+    output$toplot1 <- renderPlotly({
+        ggplotly(topic[[1]], tooltip = "count")
+    })
+    output$toplot3 <- renderPlot({
+        topic[[2]]
+    })
+    output$toplot4 <- renderPlot({
+        topic[[3]]
+    })
+    output$toplot5 <- renderPlot({
+        topic[[4]]
+    })
+    output$toplot7 <- renderPlot({
+        topi[[5]]
+    })
+    output$toplot8 <- renderPlot({
+        topic[[6]]
+    })
+    
+    
     output$ldaplot <- renderPlot({
         lda +
             labs(title = "LD Term Allocation of Meetings 1-8")

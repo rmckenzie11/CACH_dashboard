@@ -1,0 +1,12 @@
+name: dashboard_v4
+title: dashboard_v4
+username:
+account: robert-mckenzie
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2422572
+bundleId: 3239933
+url: https://robert-mckenzie.shinyapps.io/dashboard_v4/
+when: 1591571577.59101
+asMultiple: FALSE
+asStatic: FALSE

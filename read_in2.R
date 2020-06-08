@@ -126,28 +126,59 @@ tidy_com <- bind_rows(tidy_com, .id = "meeting") %>%
 tidy_com$caucus <- tidy_com$caucus %>%
   replace_na("Witness")
 
-tidy_com$caucus <- factor(tidy_com$caucus, levels = c("Liberal", "NDP", "Bloc Québécois", "Conservative", "Witness"))
+tidy_com$caucus <- factor(tidy_com$caucus)
+
+tidy_com <- tidy_com %>%
+  mutate(fill = case_when(caucus == "Conservative" ~ "blue",
+                          caucus == "Liberal" ~ "red",
+                          caucus == "NDP" ~ "orange",
+                          caucus == "Green Party" ~ "green",
+                          caucus == "Witness" ~ "grey",
+                          caucus == "Bloc Québécois" ~ "purple"))
 
 tidy_com <- split(tidy_com , f = tidy_com$meeting)
+
 
 talk_plot_meetings <- list()
 
 for (i in 1:6) {
-  talk_plot_meetings[[i]] <- ggplot(tidy_com[[i]], aes(last, count, fill = caucus)) +
+  tidy_com[[i]]$fill <- factor(tidy_com[[i]]$fill, levels = c("red", "blue", "orange", "purple", "green", "grey"))
+  talk_plot_meetings[[i]] <- ggplot(tidy_com[[i]], aes(reorder(last, as.numeric(fill)), count, fill = fill)) +
     geom_bar(stat = "identity", width = 0.5, color = "black") +
     coord_flip() +
-    scale_fill_brewer(palette = "RdYlBu") +
+    scale_fill_identity(guide = "legend", labels = tidy_com[[i]]$caucus, breaks = tidy_com[[i]]$fill) +
     theme_classic() +
+    theme(legend.title = element_blank()) +
     labs(title = "# of Words Spoken in Committee by MP or Witness") +
-    xlab("# of Words") +
-    ylab("Name")
+    xlab("Name") +
+    ylab("# of Words")
+}
+
+talk_plot_meetings_mp <- list()
+
+for (i in 1:6) {
+  tidy_com[[i]]$fill <- factor(tidy_com[[i]]$fill, levels = c("red", "blue", "orange", "purple", "green", "grey"))
+  df <- tidy_com[[i]] %>%
+    filter(caucus != "Witness")
+  talk_plot_meetings_mp[[i]] <- ggplot(df, aes(reorder(last, as.numeric(fill)), count, fill = fill)) +
+    geom_bar(stat = "identity", width = 0.5, color = "black") +
+    coord_flip() +
+    scale_fill_identity(guide = "legend", labels = reorder(tidy_com[[i]]$caucus, as.numeric(tidy_com[[i]]$fill)), breaks = reorder(tidy_com[[i]]$fill, as.numeric(tidy_com[[i]]$fill))) +
+    theme_classic() +
+    theme(legend.title = element_blank()) +
+    labs(title = "# of Words Spoken in Committee by MP") +
+    xlab("Name") +
+    ylab("# of Words")
 }
 
 ## Send the prepared data to Shiny!
 
-saveRDS(sent_all_comments, "sent_all_comments.rds")
+saveRDS(all_comments, "all_comments.rds")
 saveRDS(tidy_com, "tidy_words.RDS")
 saveRDS(sent_plot_meetings,"sent_plot_meetings.rds")
 saveRDS(talk_plot_meetings,"talk_plot_meetings.rds")
 saveRDS(members, "members.rds")
 saveRDS(meetings, "transcripts.rds")
+
+saveRDS(talk_plot_meetings_mp, "talk_plots_mp.rds")
+

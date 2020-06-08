@@ -1,0 +1,13 @@
+name: CACN_dashboard_v3
+title: CACN_dashboard_v3
+username:
+account: robert-mckenzie
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2312729
+bundleId: 3158943
+url: https://robert-mckenzie.shinyapps.io/CACN_dashboard_v3/
+when: 1589746989.86743
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: Rplot001.png|www/download.png
